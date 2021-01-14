@@ -13,7 +13,7 @@ bot_row = ones(1,6);
 vec = [1 2 3 4 5];
 base_vec = [3 4 5];
 
-% wiersz wska焠ik體 dla pierwszej tablicy
+% wiersz wska藕nik贸w dla pierwszej tablicy
 
 bot_row(1) = Cb'*b;
 
@@ -27,7 +27,7 @@ while max(bot_row(2:6)) > 0
     
     [~, pivot_col] = max(bot_row(2:6));
     
-    % Znalezienie wiersza kluczowego (B / Aj) i elementu rozwi箊uj筩ego
+    % Znalezienie wiersza kluczowego (B / Aj) i elementu rozwi膮zuj膮cego
     
     temp = zeros(1, 3);
     
@@ -42,17 +42,17 @@ while max(bot_row(2:6)) > 0
     [~, pivot_row] = min(temp);
     pivot_element = a(pivot_row, pivot_col);
     
-    % Zamiana wektor體 bazowych
+    % Zamiana wektor贸w bazowych
     
     Cb(pivot_row) = Cj(pivot_col);
     base_vec(pivot_row) = vec(pivot_col);
     
-    % dzielenie wiersza kluczowego przez element rozwi箊uj筩y
+    % dzielenie wiersza kluczowego przez element rozwi膮zuj膮cy
     
     a(pivot_row,:) = a(pivot_row,:) / pivot_element;
     b(pivot_row) = b(pivot_row) / pivot_element;
 
-    % Zerowanie warto渃i w kolumnie kluczowej
+    % Zerowanie warto艣ci w kolumnie kluczowej
     
     how_many_times = a(:, pivot_col) / a(pivot_row, pivot_col);
     how_many_times(pivot_row) = 0;
@@ -62,7 +62,7 @@ while max(bot_row(2:6)) > 0
         b(i) = b(i) - how_many_times(i)*b(pivot_row);
     end
     
-    % Aktualizacja wiersza wska焠ik體
+    % Aktualizacja wiersza wska藕nik贸w
     
     bot_row(1) = Cb'*b;
     
@@ -77,5 +77,5 @@ end
 x1_index = find(base_vec==1);
 x2_index = find(base_vec==2);
 
-fprintf("\nFirma osi筭nie najwi阫sze zyski je縠li wyprodukuje %d litr體 szamponu ", b(x1_index))
-fprintf("naturalnego i %d litr體 szamponu rodzinnego.\n", b(x2_index));
+fprintf("\nFirma osi膮gnie najwi臋ksze zyski je偶eli wyprodukuje %d litr贸w szamponu ", b(x1_index))
+fprintf("naturalnego i %d litr贸w szamponu rodzinnego.\n", b(x2_index));
