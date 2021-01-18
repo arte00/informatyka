@@ -1,3 +1,6 @@
+// This program prints n-th fibonacci nuber in console ( and pids and return codes of programs it created )
+// program [n]
+// n = n-th number of fibonacci sequence
 // needs to be updated, so it always starts, not only when you name it correctly
 
 #include <stdio.h>
