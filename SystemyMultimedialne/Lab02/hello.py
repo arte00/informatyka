@@ -2,32 +2,36 @@ import cv2
 
 cap = cv2.VideoCapture("clip_1.mp4")
 
-fourcc = cv2.VideoWriter_fourcc(*'X264')
-out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640,  480))
-out.set(cv2.CAP_PROP_FRAME_WIDTH,1280)
-out.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
-
 if not cap.isOpened():
-    print("Cannot open camera")
+    print("cannot open camera")
     exit()
-while True:
-    # Capture frame-by-frame
+
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+out1 = cv2.VideoWriter('output1.avi', fourcc, 20.0, (1280,  720))
+out2 = cv2.VideoWriter('output2.avi', fourcc, 20.0, (1280,  720))
+
+while cap.isOpened():
     ret, frame = cap.read()
-    # out.write(frame)
-    # if frame is read correctly ret is True
+
     if not ret:
-        print("Can't receive frame (stream end?). Exiting ...")
+        print("can't receive frame")
         break
-    # Our operations on the frame come here
-    # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    out1.write(frame)
     frame = cv2.flip(frame, 0)
-    # Display the resulting frame
+    out2.write(frame)
+
+    # cv2.CAP_PROP_FRAME_WIDTH = 1280
+    # cv2.CAP_PROP_FRAME_HEIGHT = 720
+
     cv2.imshow('frame', frame)
+
     if cv2.waitKey(1) == ord('q'):
         break
-# When everything done, release the capture
-out.release()
+
 cap.release()
+out1.release()
+out2.release()
 cv2.destroyAllWindows()
 
 
