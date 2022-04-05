@@ -1,3 +1,9 @@
-    # for i in range(new_height):
-    #     for j in range(new_width):
-    #         print(belongs[i][j])
+ # plt.title("mean")
+    # plt.imshow(mean, cmap='gray', vmin=0, vmax=255)
+    # plt.show()
+    # plt.title("median")
+    # plt.imshow(median, cmap='gray', vmin=0, vmax=255)
+    # plt.show()
+    # plt.title("nearest")
+    # plt.imshow(nni, cmap='gray', vmin=0, vmax=255)
+    # plt.show()

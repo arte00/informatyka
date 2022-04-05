@@ -241,7 +241,7 @@ if __name__ == "__main__":
 
     image = load_image("SM_Lab03/0008.tif")
     print(image.shape)
-    scale = 0.2
+    scale = 1.33
 
     # result = scale_mean(image, scale)
     # print(result.shape)
@@ -287,22 +287,26 @@ if __name__ == "__main__":
     mean = scale_mean(image, scale)
     median = scale_median(image, scale)
 
-    edges = cv2.Canny(image, 100, 100)
+    edges_og = cv2.Canny(np.uint8(image), 100, 100)
+    edges_nni = cv2.Canny(np.uint8(nni), 100, 100)
+    edges_bilinear = cv2.Canny(np.uint8(bilinear), 100, 100)
+    edges_mean = cv2.Canny(np.uint8(mean), 100, 100)
+    edges_median = cv2.Canny(np.uint8(median), 100, 100)
 
     plt.title("original")
-    plt.imshow(edges, cmap='gray', vmin=0, vmax=255)
+    plt.imshow(edges_og, cmap='gray', vmin=0, vmax=255)
     plt.show()
     plt.title("mean")
-    plt.imshow(mean, cmap='gray', vmin=0, vmax=255)
+    plt.imshow(edges_nni, cmap='gray', vmin=0, vmax=255)
     plt.show()
     plt.title("median")
-    plt.imshow(median, cmap='gray', vmin=0, vmax=255)
+    plt.imshow(edges_bilinear, cmap='gray', vmin=0, vmax=255)
     plt.show()
     plt.title("nearest")
-    plt.imshow(nni, cmap='gray', vmin=0, vmax=255)
+    plt.imshow(edges_mean, cmap='gray', vmin=0, vmax=255)
     plt.show()
     plt.title("bilinear")
-    plt.imshow(bilinear, cmap='gray', vmin=0, vmax=255)
+    plt.imshow(edges_median, cmap='gray', vmin=0, vmax=255)
     plt.show()
 
 
