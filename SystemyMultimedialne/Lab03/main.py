@@ -12,8 +12,8 @@ def check_if_grayscale(data):
         return False
 
 
-def load_image(infilename) :
-    img = Image.open('Lab03/' + infilename)
+def load_image(path, infilename) :
+    img = Image.open(path + infilename)
     img.load()
     data = np.asarray(img, dtype="int32")
     return data
@@ -154,53 +154,54 @@ def scale_mean(_data, rescale):
 
     return output
 
-# def scale_weighted_mean(_data, rescale):
-#     data = _data
+def scale_weighted_mean(_data, rescale):
+    data = _data
 
-#     width = data.shape[1]
-#     height = data.shape[0]
+    width = data.shape[1]
+    height = data.shape[0]
 
-#     if len(data.shape) > 2:
-#         colors = data.shape[2]
+    if len(data.shape) > 2:
+        colors = data.shape[2]
 
-#     is_grayscale = check_if_grayscale(data)
-#     new_width = np.int32(width * rescale)
-#     new_height = np.int32(height * rescale)
+    is_grayscale = check_if_grayscale(data)
+    new_width = np.int32(width * rescale)
+    new_height = np.int32(height * rescale)
 
-#     if is_grayscale:
-#         output = np.zeros(new_width*new_height, dtype="int32").reshape(new_height, new_width)
-#     else:
-#         output = np.zeros(new_width*new_height*colors, dtype="int32").reshape(new_height, new_width, colors)
+    if is_grayscale:
+        output = np.zeros(new_width*new_height, dtype="int32").reshape(new_height, new_width)
+    else:
+        output = np.zeros(new_width*new_height*colors, dtype="int32").reshape(new_height, new_width, colors)
 
-#     box_width = int(np.ceil(1/rescale))
-#     box_height = int(np.ceil(1/rescale))
+    box_width = int(np.ceil(1/rescale))
+    box_height = int(np.ceil(1/rescale))
 
-#     for y in range(new_height):
-#         for x in range(new_width):
+    for y in range(new_height):
+        for x in range(new_width):
 
-#             x_ = int(np.floor(x/rescale))
-#             y_ = int(np.floor(y/rescale))
+            x_start = int(np.floor(x/rescale))
+            y_start = int(np.floor(y/rescale))
 
-#             x_end = min(x_ + box_width, width-1)
-#             y_end = min(y_ + box_height, height-1)
+            x_end = min(x_start + box_width, width-1)
+            y_end = min(y_start + box_height, height-1)
 
-#             pixels = data[y_:y_end,x_:x_end]
+            pixels = np.array(data[y_start:y_end,x_start:x_end])
 
-#             if len(pixels) % 2 != 0:
-#                 x_middle, y_middle = len(pixels) // 2, len(pixels[0]) // 2
-#             else:
-#                 x_middle, y_middle = len(pixels) // 2 + len(pixels) // 2 - 1, len(pixels) // 2 + len(pixels) // 2 - 1
+            x_weights = np.linspace(0.5, 1, box_width)
+            y_weights = np.linspace(1, 0.5, box_height)
 
-#             print(box_height, box_width)
-#             print(x_middle, y_middle)
+            weights = np.array([[[x_weights[i]*y_weights[j] for _ in range(3)] for i in range((x_end - x_start))] for j in range((y_end - y_start))])
 
+            box = pixels * weights
 
+            pixel = np.uint8(np.sum(box, axis=(0, 1)) / np.sum(weights, axis=(0, 1)))
 
-#             pixel = np.mean(data[y_:y_end,x_:x_end], axis=(0, 1))
+            output[y][x] = pixel
 
-#             output[y][x] = pixel
+            if y % 100 == 0 and x % 100 == 0:
+                print(str(y) + "/" + str(new_height))
+                print(str(x) + "/" + str(new_width))
 
-#     return output
+    return output
 
 def scale_median(_data, rescale):
     data = _data
@@ -239,9 +240,24 @@ def scale_median(_data, rescale):
 
 if __name__ == "__main__":
 
-    image = load_image("SM_Lab03/0008.tif")
-    print(image.shape)
+    image = load_image('Lab03/', 'SM_Lab03/0008.tif')
     scale = 1.33
+
+    # weigted_mean = scale_weighted_mean(image, scale)
+    # edges_median = cv2.Canny(np.uint8(weigted_mean), 100, 100)
+
+    # plt.figure(1)
+    # plt.subplot(131)
+    # plt.title("original")
+    # plt.imshow(image, cmap='gray', vmin=0, vmax=255)
+    # plt.subplot(132)
+    # plt.title("weighted mean")
+    # plt.imshow(weigted_mean, cmap='gray', vmin=0, vmax=255)
+    # plt.subplot(133)
+    # plt.title("mean")
+    # plt.imshow(edges_median, cmap='gray', vmin=0, vmax=255)
+    # plt.show()
+
 
     # result = scale_mean(image, scale)
     # print(result.shape)
@@ -282,32 +298,32 @@ if __name__ == "__main__":
     # plt.imshow(median, cmap='gray', vmin=0, vmax=255)
     # plt.show()
 
-    nni = nearest_neightbour_interpolation(image, scale)
-    bilinear = bilinear_interpolation(image, scale)
-    mean = scale_mean(image, scale)
-    median = scale_median(image, scale)
+    # nni = nearest_neightbour_interpolation(image, scale)
+    # bilinear = bilinear_interpolation(image, scale)
+    # mean = scale_mean(image, scale)
+    # median = scale_median(image, scale)
 
-    edges_og = cv2.Canny(np.uint8(image), 100, 100)
-    edges_nni = cv2.Canny(np.uint8(nni), 100, 100)
-    edges_bilinear = cv2.Canny(np.uint8(bilinear), 100, 100)
-    edges_mean = cv2.Canny(np.uint8(mean), 100, 100)
-    edges_median = cv2.Canny(np.uint8(median), 100, 100)
+    # edges_og = cv2.Canny(np.uint8(image), 100, 100)
+    # edges_nni = cv2.Canny(np.uint8(nni), 100, 100)
+    # edges_bilinear = cv2.Canny(np.uint8(bilinear), 100, 100)
+    # edges_mean = cv2.Canny(np.uint8(mean), 100, 100)
+    # edges_median = cv2.Canny(np.uint8(median), 100, 100)
 
-    plt.title("original")
-    plt.imshow(edges_og, cmap='gray', vmin=0, vmax=255)
-    plt.show()
-    plt.title("mean")
-    plt.imshow(edges_nni, cmap='gray', vmin=0, vmax=255)
-    plt.show()
-    plt.title("median")
-    plt.imshow(edges_bilinear, cmap='gray', vmin=0, vmax=255)
-    plt.show()
-    plt.title("nearest")
-    plt.imshow(edges_mean, cmap='gray', vmin=0, vmax=255)
-    plt.show()
-    plt.title("bilinear")
-    plt.imshow(edges_median, cmap='gray', vmin=0, vmax=255)
-    plt.show()
+    # plt.title("original")
+    # plt.imshow(edges_og, cmap='gray', vmin=0, vmax=255)
+    # plt.show()
+    # plt.title("mean")
+    # plt.imshow(edges_nni, cmap='gray', vmin=0, vmax=255)
+    # plt.show()
+    # plt.title("median")
+    # plt.imshow(edges_bilinear, cmap='gray', vmin=0, vmax=255)
+    # plt.show()
+    # plt.title("nearest")
+    # plt.imshow(edges_mean, cmap='gray', vmin=0, vmax=255)
+    # plt.show()
+    # plt.title("bilinear")
+    # plt.imshow(edges_median, cmap='gray', vmin=0, vmax=255)
+    # plt.show()
 
 
 
