@@ -1,5 +1,6 @@
 from platform import node
 import sys
+from tkinter import image_names
 from cv2 import bitwise_and
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,11 +13,6 @@ def load_image(path, infilename) :
     img.load()
     data = np.asarray(img, dtype="int32")
     return data
-
-
-def save_image(npdata, outfilename) :
-    img = Image.fromarray(np.asarray( np.clip(npdata,0,255), dtype="uint8"), "L" )
-    img.save(outfilename)
 
 def get_size(obj, seen=None):
     """Recursively finds size of objects"""
@@ -105,32 +101,28 @@ def decore_rle(_data):
 
 '''QUAD TREE'''
 
-node_counter = 0
-
-def encode_quad(data, max=-1, level=0):
-    global node_counter
-    node_counter += 1
-
-    color = color = np.mean(data, axis=(0, 1)).astype(data.dtype)
+def split(data, level):
+    
+    color = np.mean(data, axis=(0, 1)).astype(int)
 
     quad_top_left = None
     quad_top_right = None
     quad_bot_right = None
     quad_bot_left = None
 
-    if not (data == color).all() and level != max and data.shape[0] > 1 and data.shape[1] > 1:
+    if not (data == color).all() and data.shape[0] > 1 and data.shape[1] > 1:
+
         split_width = np.array_split(data, 2, axis=1)
+
         top_left, bot_left = np.array_split(split_width[0], 2, axis=0)
         top_right, bot_right = np.array_split(split_width[1], 2, axis=0)
-        quad_top_left = encode_quad(top_left, max, level + 1)
-        quad_top_right = encode_quad(top_right, max, level + 1)
-        quad_bot_right = encode_quad(bot_right, max, level + 1)
-        quad_bot_left = encode_quad(bot_left, max, level + 1)
 
-    return (color, level, quad_top_left, quad_top_right, quad_bot_right, quad_bot_left)
+        quad_top_left = split(top_left, level + 1)
+        quad_top_right = split(top_right, level + 1)
+        quad_bot_right = split(bot_right, level + 1)
+        quad_bot_left = split(bot_left, level + 1)
 
-def decode_quad(node):
-    pass
+    return (color, level, quad_top_left, quad_top_right, quad_bot_right, quad_bot_left, data.shape)
 
 def join(top_left, top_right, bot_right, bot_left):
     top = np.concatenate(top_left, top_right, axis=1)
@@ -139,35 +131,138 @@ def join(top_left, top_right, bot_right, bot_left):
 
 def rle_testing():
     path = 'Lab06/'
-    image = load_image(path, 'rysunek_techniczny.jpg')
+    image = load_image(path, 'scan.png')
     size = get_size(image)
     
     encoded = encode_rle(image)
     decoded = decore_rle(encoded)
 
-    print(len(image))
-    print(len(image.flatten()))
-    print(len(encoded))
-    print(len(decoded))
+    img_size = get_size(image)
+    enc_size = get_size(encoded)
+    dec_size = get_size(decoded)
+
+    print("image size", img_size)
+    print("compressed image size", enc_size)
+    print("decompressed image size", dec_size)
+    print("compression ratio", round(dec_size/enc_size*100, 2), "%")
     
     plt.imshow(decoded, cmap='gray', vmin=0, vmax=255)
     plt.show()
 
+def quad_split(data):
 
-def quad_testing():
+    level = 0
 
-    # image = np.dstack([np.eye(7),np.eye(7),np.eye(7)])
-    path = 'Lab06/'
-    # _image = load_image(path, 'monkey.jpg')
-    _image = np.eye(8)
-    image = _image.copy()
-    print("image", get_size(image))
-    print(image)
-    splitted = encode_quad(image, 1)
-    print(splitted[2])
-    print("splitted", get_size(splitted))
-    print("node_counter", node_counter)
+    color = np.mean(data, axis=(0, 1)).astype(int)
+    split_width = np.array_split(data, 2, axis=1)
+
+    top_left, bot_left = np.array_split(split_width[0], 2, axis=0)
+    top_right, bot_right = np.array_split(split_width[1], 2, axis=0)
+
+    if not (data == color).all() and data.shape[0] > 1 and data.shape[1] > 1:
+
+        split_width = np.array_split(data, 2, axis=1)
+
+        top_left, bot_left = np.array_split(split_width[0], 2, axis=0)
+        top_right, bot_right = np.array_split(split_width[1], 2, axis=0)
+
+        quad_top_left = split(top_left, level + 1)
+        quad_top_right = split(top_right, level + 1)
+        quad_bot_right = split(bot_right, level + 1)
+        quad_bot_left = split(bot_left, level + 1)
+
+    return (color, level, quad_top_left, quad_top_right, quad_bot_right, quad_bot_left, data.shape)
+
+color = 0
+level = 1
+top_left = 2
+top_right = 3
+bot_right = 4
+bot_left = 5
+shape = 6
+
+def join(top_left, top_right, bot_right, bot_left):
+
+    top = np.concatenate((top_left, top_right), axis=1)
+    bot = np.concatenate((bot_left, bot_right), axis=1)
+
+    return np.concatenate((top, bot))
+
+def quad_join(tree, max_level=-1):
+
+    is_leaf = tree[top_left] is None and tree[top_right] is None and tree[bot_right] is None and tree[bot_left] is None
+
+    if tree is None:
+        return None
+
+    if is_leaf or tree[level] == max_level:
+        return np.tile(tree[color], (tree[shape][0], tree[shape][1], 1))
+    else:
+        return  join(
+                quad_join(tree[top_left], max_level),
+                quad_join(tree[top_right], max_level),
+                quad_join(tree[bot_right], max_level),
+                quad_join(tree[bot_left], max_level)).astype(int)
+
+def search_leaves(tree, leaves):
+
+    if tree is None:
+        return
+
+    if tree[top_left] == None and tree[top_right] == None and tree[bot_right] == None and tree[bot_left] == None:
+        leaves.append(tree)
+    
+    search_leaves(tree[top_left], leaves)
+    search_leaves(tree[top_right], leaves)
+    search_leaves(tree[bot_right], leaves)
+    search_leaves(tree[bot_left], leaves)
+
 
 
 if __name__ == '__main__':
-    quad_testing()
+
+    # path = 'Lab06/'
+    # title = 'rysunek.png'
+    # image = load_image(path, title)
+    # size = get_size(image)
+    
+    # encoded = encode_rle(image)
+    # decoded = decore_rle(encoded)
+
+    # img_size = get_size(image)
+    # enc_size = get_size(encoded)
+    # dec_size = get_size(decoded)
+
+    # print
+    # print("image size               ", img_size)
+    # print("compressed image size    ", enc_size)
+    # print("decompressed image size  " , dec_size)
+    # print("compression ratio        ", round(img_size/enc_size, 3))
+    # print("compressed to original   ", round(enc_size/img_size*100, 3), "%")
+    # print("are equal                ", (image==decoded).all())
+    
+    # plt.imshow(decoded, cmap='gray', vmin=0, vmax=255)
+    # plt.show()
+
+    path = 'Lab06/'
+    data = load_image(path, 'milky.jpg')
+
+    encoded = quad_split(data)
+    decoded = quad_join(encoded, -1)
+
+    img_size = get_size(data)
+    enc_size = get_size(encoded)
+    dec_size = get_size(decoded)
+
+    print("QUAD------------------")
+    print("original size        ", get_size(data))
+    print("compressed size      ", get_size(encoded))
+    print("decompressed size    ", get_size(decoded))
+    print("compression ratio        ", round(img_size/enc_size, 3))
+    print("compressed to original   ", round(enc_size/img_size*100, 3), "%")
+
+    plt.imshow(data)
+    plt.imshow(decoded)
+    plt.show()
+
+
