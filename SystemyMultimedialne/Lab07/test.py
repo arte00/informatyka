@@ -109,6 +109,6 @@ data1 = cycle_mu_law(data[0:_max], 255, bit)
 
 plot_sound_diff(data, data1, data2, freq, 5, "Kompresja stratna")
 
-sd.play(data[0:_max], samplerate=freq, blocking=True)
-sd.play(data1, samplerate=freq, blocking=True)
+# sd.play(data[0:_max], samplerate=freq, blocking=True)
+# sd.play(data1, samplerate=freq, blocking=True)
 # sd.play(data2, samplerate=freq, blocking=True)
