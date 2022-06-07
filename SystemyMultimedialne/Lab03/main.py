@@ -322,7 +322,7 @@ if __name__ == "__main__":
     # plt.imshow(edges_mean, cmap='gray', vmin=0, vmax=255)
     # plt.show()
     # plt.title("bilinear")
-    # plt.imshow(edges_median, cmap='gray', vmin=0, vmax=255)
+    # plt.imshow(edges_median, cmap='gray', 1, 4, 5, 6, 7)
     # plt.show()
 
 

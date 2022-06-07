@@ -71,8 +71,10 @@ def zigzag(A):
                 B[template[r,c]]=A[r,c]
     return B
 
-def chroma_subsample(layer, chroma_mode):
+def chroma_subsample(layer, chroma_mode, is_y):
 
+    if is_y:
+        return layer
     if chroma_mode == "4:4:4":
         return layer
     elif chroma_mode == "4:2:2":
@@ -81,28 +83,90 @@ def chroma_subsample(layer, chroma_mode):
             for j in range(0, layer.shape[1], 2):
                 output[i][int(j/2)] = layer[i][j]
         return output
+    elif chroma_mode == "4:4:0":
+        output = np.empty((int(layer.shape[0]/2), layer.shape[1]))
+        for i in range(0, layer.shape[0], 2):
+            for j in range(0, layer.shape[1]):
+                output[int(i/2)][j] = layer[i][j]
+        return output
+    elif chroma_mode == "4:2:0":
+        output = np.empty((int(layer.shape[0]/2), int(layer.shape[1]/2)))
+        for i in range(0, layer.shape[0], 2):
+            for j in range(0, layer.shape[1], 2):
+                output[int(i/2)][int(j/2)] = layer[i][j]
+        return output
+    elif chroma_mode == "4:1:1":
+        output = np.empty((int(layer.shape[0]), int(layer.shape[1]/4)))
+        for i in range(0, layer.shape[0]):
+            for j in range(0, layer.shape[1], 4):
+                output[i][int(j/4)] = layer[i][j]
+        return output
+    elif chroma_mode == "4:1:0":
+        output = np.empty((int(layer.shape[0]/2), int(layer.shape[1]/4)))
+        for i in range(0, layer.shape[0], 2):
+            for j in range(0, layer.shape[1], 4):
+                output[int(i/2)][int(j/4)] = layer[i][j]
+        return output
 
-def chroma_resample(_data, sampling):
+def chroma_resample(_data, sampling, is_y):
     data = _data
-    new_data = np.zeros((data.shape[0], data.shape[1]*2))
+    # new_data = np.zeros((data.shape[0], data.shape[1]*2))
 
-    if sampling == "4:4:4":
+    if is_y:
+        return data
+    elif sampling == "4:4:4":
         new_data = data
     elif sampling == "4:2:2":
+        new_data = np.zeros((data.shape[0], data.shape[1]*2))
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
                 new_data[i, j*2] = data[i, j]
                 new_data[i, j*2+1] = data[i, j]
+    elif sampling == "4:4:0":
+        new_data = np.zeros((data.shape[0]*2, data.shape[1]))
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                new_data[i*2, j] = data[i, j]
+                new_data[i*2+1, j] = data[i, j]
+    elif sampling == "4:2:0":
+        new_data = np.zeros((data.shape[0]*2, data.shape[1]*2))
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                new_data[i*2, j*2] = data[i, j]
+                new_data[i*2+1, j*2+1] = data[i, j]
+                new_data[i*2, j*2+1] = data[i, j]
+                new_data[i*2+1, j*2] = data[i, j]
+    elif sampling == "4:1:1":
+        new_data = np.zeros((data.shape[0], data.shape[1]*4))
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                new_data[i, j*2] = data[i, j]
+                new_data[i, j*2+1] = data[i, j]
+                new_data[i, j*2+2] = data[i, j]
+                new_data[i, j*2+3] = data[i, j]
+    elif sampling == "4:1:0":
+        new_data = np.zeros((data.shape[0]*2, data.shape[1]*4))
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                new_data[i*2, j*2] = data[i, j]
+                new_data[i*2+1, j*2+1] = data[i, j]
+                new_data[i*2, j*2+1] = data[i, j]
+                new_data[i*2+1, j*2] = data[i, j]
+                new_data[i*2, j*2+2] = data[i, j]
+                new_data[i*2+1, j*2+2] = data[i, j]
+                new_data[i*2, j*2+3] = data[i, j]
+                new_data[i*2+1, j*2+3] = data[i, j]
+                
+
     return new_data
 
-def compress(layer, sampling, q, is_y):
+def compress(layer, sampling, q, rle, is_y):
 
+    if is_y:
+        sampled = chroma_subsample(layer, sampling, True)
+    else:
+        sampled = chroma_subsample(layer, sampling, False)
 
-    sampled = chroma_subsample(layer, sampling)
-    # if not is_y:
-    #     sampled = chroma_subsample(layer, sampling)
-    # else:
-    #     sampled = layer
     out = np.zeros(sampled.shape[0]*sampled.shape[1])
     indx = 0
     for i in range(0, sampled.shape[0], 8):
@@ -113,17 +177,32 @@ def compress(layer, sampling, q, is_y):
             slice = np.round(slice/q).astype(int)
             out[indx:indx+64] = zigzag(slice)
             indx += 64
+
     #rle
-    return encode_rle(out)
+    if rle:
+        return encode_rle(out)
+    return out
 
-def decompress(layer, sampling, q, info, is_y):
+def decompress(layer, sampling, q, info, rle, is_y):
 
-    layer = decore_rle(layer)
+    if rle:
+        layer = decore_rle(layer)
 
-    if sampling == "4:2:2":
+    if is_y:
+        out = out = np.zeros((info.x, int(info.y)))
+
+    if sampling == "4:2:2" and not is_y:
         out = np.zeros((info.x, int(info.y/2)))
-    else:
+    elif sampling == "4:4:4" and not is_y:
         out = np.zeros((info.x, int(info.y)))
+    elif sampling == "4:1:1" and not is_y:
+        out = np.zeros((info.x, int(info.y/4)))
+    elif sampling == "4:2:0" and not is_y:
+        out = np.zeros((int(info.x/2), int(info.y/2)))
+    elif sampling == "4:1:0" and not is_y:
+        out = np.zeros((int(info.x/2), int(info.y/4)))
+    elif sampling == "4:4:0" and not is_y:
+        out = np.zeros((int(info.x/2), info.y))
 
     for idx, i in enumerate(range(0, layer.shape[0], 64)):
         slice = zigzag(layer[i:i+64])
@@ -134,14 +213,12 @@ def decompress(layer, sampling, q, info, is_y):
         y = int((idx*8)/out.shape[1])*8
         out[y:y+8, x:x+8] = slice
 
-    unsampled = chroma_resample(out, sampling)
+    if is_y:
+        unsampled = chroma_resample(out, sampling, True)
+    else:
+        unsampled = chroma_resample(out, sampling, False)
 
-    # if not is_y:
-    #     unsampled = chroma_resample(out, sampling)
-    # else:
-    #     unsampled = out
-
-    return unsampled
+    return unsampled.astype(int)
 
 def encode_rle(_data):
 
@@ -162,18 +239,16 @@ def encode_rle(_data):
     # pair = bit and how many times bit occured in row [1, 1, 4, 5, 5, 5] = [2, 1, 1, 4, 3, 5]
     pair_index = dimension + 1
     bit_index = 0
-    with tqdm(total=data_flatten.shape[0]) as pbar:
-        while bit_index < data_flatten.shape[0]:
-            current_bit = data_flatten[bit_index]
-            repeats = 1
-            while bit_index + repeats < data_flatten.shape[0] and current_bit == data_flatten[bit_index + repeats]:
-                repeats += 1
+    while bit_index < data_flatten.shape[0]:
+        current_bit = data_flatten[bit_index]
+        repeats = 1
+        while bit_index + repeats < data_flatten.shape[0] and current_bit == data_flatten[bit_index + repeats]:
+            repeats += 1
 
-            bit_index += repeats
-            pbar.update(bit_index)
-            encoded_data[pair_index] = repeats
-            encoded_data[pair_index + 1] = current_bit
-            pair_index += 2
+        bit_index += repeats
+        encoded_data[pair_index] = repeats
+        encoded_data[pair_index + 1] = current_bit
+        pair_index += 2
 
     return encoded_data[:pair_index].astype(int)
     
@@ -214,9 +289,9 @@ def encode_jpeg(_image, sampling, qy, qc):
 
     Y, Cr, Cb = cv2.split(YCrCb)
 
-    y_compressed = compress(Y, sampling, qy, True)
-    cr_compressed = compress(Cr, sampling, qc, False)
-    cb_compressed = compress(Cb, sampling, qc, False)
+    y_compressed = compress(Y, sampling, qy, False, True)
+    cr_compressed = compress(Cr, sampling, qc, False, True)
+    cb_compressed = compress(Cb, sampling, qc, False, True)
 
     info = ImageInfo(YCrCb.shape[0], YCrCb.shape[1])
 
@@ -224,9 +299,9 @@ def encode_jpeg(_image, sampling, qy, qc):
 
 def decode_jpeg(y_compressed, cr_compressed, cb_compressed, sampling, qy, qc, info):
     
-    y_decompressed = decompress(y_compressed, sampling, qy, info, True)
-    cr_decompressed = decompress(cr_compressed, sampling, qc, info, False)
-    cb_decompressed = decompress(cb_compressed, sampling, qc, info, False)
+    y_decompressed = decompress(y_compressed, sampling, qy, info, False, True)
+    cr_decompressed = decompress(cr_compressed, sampling, qc, info, False, True)
+    cb_decompressed = decompress(cb_compressed, sampling, qc, info, False, True)
 
     y_decompressed = np.clip(y_decompressed, 0, 255)
 
@@ -237,27 +312,36 @@ def decode_jpeg(y_compressed, cr_compressed, cb_compressed, sampling, qy, qc, in
 
 if __name__ == "__main__":
 
-    x = 500
-    y = 500
+    data = np.array([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]])
 
-    s = 64
+    sub = chroma_subsample(data, "4:1:0", False)
+    resub = chroma_resample(sub, "4:1:0", False)
 
-    ones = np.ones((8, 8))
+    print(data)
+    print(sub)
+    print(resub)
 
-    img = cv2.imread("Lab08/firewatch.jpg")
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = img.copy()[x:x+s, y:y+s]
+    # x = 0
+    # y = 0
 
-    qy_type = QY
-    qc_type = QC
-    sampling = "4:2:2"
+    # s = 720
 
-    y_compressed, cr_compressed, cb_compressed, info = encode_jpeg(img, sampling, qy_type, qc_type)
-    decompressed, y_decompressed, cr_decompressed, cb_decompressed = decode_jpeg(y_compressed, cr_compressed, cb_compressed, sampling, qy_type, qc_type, info)
+    # ones = np.ones((8, 8))
 
-    YCrCb=cv2.cvtColor(img,cv2.COLOR_RGB2YCrCb).astype(int)
+    # img = cv2.imread("Lab08/safari.jpg")
+    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # img = img.copy()
 
-    Y, Cr, Cb = cv2.split(YCrCb)
+    # qy_type = QY
+    # qc_type = QC
+    # sampling = "4:2:2"
+
+    # y_compressed, cr_compressed, cb_compressed, info = encode_jpeg(img, sampling, qy_type, qc_type)
+    # decompressed, y_decompressed, cr_decompressed, cb_decompressed = decode_jpeg(y_compressed, cr_compressed, cb_compressed, sampling, qy_type, qc_type, info)
+
+    # YCrCb=cv2.cvtColor(img,cv2.COLOR_RGB2YCrCb).astype(int)
+
+    # Y, Cr, Cb = cv2.split(YCrCb)
 
 
     # Y = Y[x:x+s, y:y+s]
@@ -285,18 +369,18 @@ if __name__ == "__main__":
     
     # decompressed, y_decompressed, cr_decompressed, cb_decompressed = cv2.split(dec)
 
-    fig, axs = plt.subplots(1, 4, sharey=True)
-    fig.set_size_inches(9,13)
-    axs[0].imshow(img)
-    axs[1].imshow(Y,cmap=plt.cm.gray)
-    axs[2].imshow(Cr,cmap=plt.cm.gray)
-    axs[3].imshow(Cb,cmap=plt.cm.gray)
-    plt.show()
+    # fig, axs = plt.subplots(1, 4, sharey=True)
+    # fig.set_size_inches(9,13)
+    # axs[0].imshow(img[x:x+s, y:y+s])
+    # axs[1].imshow(Y,cmap=plt.cm.gray)
+    # axs[2].imshow(Cr,cmap=plt.cm.gray)
+    # axs[3].imshow(Cb,cmap=plt.cm.gray)
+    # plt.show()
 
-    fig, axs = plt.subplots(1, 4, sharey=True)
-    fig.set_size_inches(9,13)
-    axs[0].imshow(decompressed)
-    axs[1].imshow(y_decompressed,cmap=plt.cm.gray)
-    axs[2].imshow(cr_decompressed,cmap=plt.cm.gray)
-    axs[3].imshow(cb_decompressed,cmap=plt.cm.gray)
-    plt.show()
+    # fig, axs = plt.subplots(1, 4, sharey=True)
+    # fig.set_size_inches(9,13)
+    # axs[0].imshow(decompressed[x:x+s, y:y+s])
+    # axs[1].imshow(y_decompressed[x:x+s, y:y+s],cmap=plt.cm.gray)
+    # axs[2].imshow(cr_decompressed[x:x+s, y:y+s],cmap=plt.cm.gray)
+    # axs[3].imshow(cb_decompressed[x:x+s, y:y+s],cmap=plt.cm.gray)
+    # plt.show()
