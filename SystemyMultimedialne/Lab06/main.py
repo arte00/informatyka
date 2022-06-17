@@ -221,48 +221,48 @@ def search_leaves(tree, leaves):
 
 if __name__ == '__main__':
 
-    # path = 'Lab06/'
-    # title = 'rysunek.png'
-    # image = load_image(path, title)
-    # size = get_size(image)
+    path = 'Lab06/'
+    title = 'rysunek.png'
+    image = load_image(path, title)
+    size = get_size(image)
     
-    # encoded = encode_rle(image)
-    # decoded = decore_rle(encoded)
+    encoded = encode_rle(image)
+    decoded = decore_rle(encoded)
 
-    # img_size = get_size(image)
-    # enc_size = get_size(encoded)
-    # dec_size = get_size(decoded)
+    img_size = get_size(image)
+    enc_size = get_size(encoded)
+    dec_size = get_size(decoded)
 
-    # print
-    # print("image size               ", img_size)
-    # print("compressed image size    ", enc_size)
-    # print("decompressed image size  " , dec_size)
-    # print("compression ratio        ", round(img_size/enc_size, 3))
-    # print("compressed to original   ", round(enc_size/img_size*100, 3), "%")
-    # print("are equal                ", (image==decoded).all())
+    print
+    print("image size               ", img_size)
+    print("compressed image size    ", enc_size)
+    print("decompressed image size  " , dec_size)
+    print("compression ratio        ", round(img_size/enc_size, 3))
+    print("compressed to original   ", round(enc_size/img_size*100, 3), "%")
+    print("are equal                ", (image==decoded).all())
     
     # plt.imshow(decoded, cmap='gray', vmin=0, vmax=255)
     # plt.show()
 
-    path = 'Lab06/'
-    data = load_image(path, 'milky.jpg')
+    # path = 'Lab06/'
+    # data = load_image(path, 'milky.jpg')
 
-    encoded = quad_split(data)
-    decoded = quad_join(encoded, -1)
+    # encoded = quad_split(data)
+    # decoded = quad_join(encoded, -1)
 
-    img_size = get_size(data)
-    enc_size = get_size(encoded)
-    dec_size = get_size(decoded)
+    # img_size = get_size(data)
+    # enc_size = get_size(encoded)
+    # dec_size = get_size(decoded)
 
-    print("QUAD------------------")
-    print("original size        ", get_size(data))
-    print("compressed size      ", get_size(encoded))
-    print("decompressed size    ", get_size(decoded))
-    print("compression ratio        ", round(img_size/enc_size, 3))
-    print("compressed to original   ", round(enc_size/img_size*100, 3), "%")
+    # print("QUAD------------------")
+    # print("original size        ", get_size(data))
+    # print("compressed size      ", get_size(encoded))
+    # print("decompressed size    ", get_size(decoded))
+    # print("compression ratio        ", round(img_size/enc_size, 3))
+    # print("compressed to original   ", round(enc_size/img_size*100, 3), "%")
 
-    plt.imshow(data)
-    plt.imshow(decoded)
-    plt.show()
+    # plt.imshow(data)
+    # plt.imshow(decoded)
+    # plt.show()
 
 
