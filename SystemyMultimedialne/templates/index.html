@@ -1,0 +1,43 @@
+<html>
+  <head>
+    <title>Pi Video Surveillance</title>
+  </head>
+  <body>
+    <h1>Pi Video Surveillance</h1>
+    <img src="{{ url_for('video_feed') }}">
+    <table>
+      <tr>
+        <th><form id="package_form" action="" method="post">
+          <div class="panel-body">
+            <input type ="submit" name="action" value="Stop">
+          </div>
+        </form></th>
+        <th><form id="package_form" action="" method="post">
+          <div class="panel-body">
+            <input type ="submit" name="action" value="Normal">
+          </div>
+        </form></th>
+        <th><form id="package_form" action="" method="post">
+          <div class="panel-body">
+            <input type ="submit" name="action" value="Detect">
+          </div>
+        </form></th>
+        <th><form id="package_form" action="" method="post">
+          <div class="panel-body">
+            <input type ="submit" name="action" value="Face">
+          </div>
+        </form></th>
+        <th><form id="package_form" action="" method="post">
+          <div class="panel-body">
+            <input type ="submit" name="action" value="Motion">
+          </div>
+        </form></th>
+        <th><form id="package_form" action="" method="post">
+          <div class="panel-body">
+            <input type ="submit" name="action" value="Flow">
+          </div>
+        </form></th>
+      </tr>
+    </table>
+  </body>
+</html>
